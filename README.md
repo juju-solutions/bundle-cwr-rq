@@ -31,11 +31,20 @@ issue the following on a controller you have already bootstraped:
     juju add-user ciuser
     juju grant ciuser superuser
 
-Then login into jenkins (user admin) and build the InitCwr job providing the token you got form
-the add-user commnad and a user friendly name for the controller.
+Then login into jenkins (user admin) and build the `RegisterController` job providing the token you got form
+the add-user command and a user friendly name for the controller.
 While you are logged in you can initialise the session between jenkins and the Juju Store
-so that you can push the build artifacts to the store. 
-<!-- we could have an action for these -->
+so that you can push the build artifacts to the store. To do so you need to trigger the `InitJujuStoreSession`
+job.
+
+To have your charm build and optionally pushed to the store you can
+call the `buildcharmjob` action. This action would need the github url of your project,
+the charm name and should you decide to push the charm to the store it would also need
+your launchpad ID. Here is an example on how to trigger this action:
+
+     juju run-action juju-ci-env/0 buildcharmjob charmname="my-awesome-charm" gitrepo="https://github.com/meatgh/my-awesome-charm-layer" pushtostore=True lpid=me.at.launchpad
+
+After deploying the job to Jenkins you would need to reload the jenkins configuration.
 
 
 # Resources
