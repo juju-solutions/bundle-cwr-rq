@@ -1,0 +1,4 @@
+reset: false
+deployment_timeout: 3600
+packages:
+  - python3-yaml
