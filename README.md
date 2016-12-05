@@ -16,35 +16,50 @@
 -->
 # Overview
 
-This bundle deploys the Juju CI solution.
+This bundle deploys a reference infrastructure for testing, reviewing and releasing charms and bundles
+to the Juju Store. The CI used in this bundle is Jenkins paired with a set of charm specific tools, namely:
+
+  * [The Review Queue][]
+  * [Cloud Weather Report][]
+  * [Bundletester][]
+  * [Matrix][]
+
+[The Review Queue]: https://github.com/juju-solutions/review-queue
+[Cloud Weather Report]: https://github.com/juju-solutions/cloud-weather-report
+[Bundletester]: https://github.com/juju-solutions/bundletester
+[Matrix]: https://github.com/juju-solutions/matrix
 
 
-# Instructions
+## Bundle Composition
 
-After the bundle is deployed you need to set a password for the jenkins admin user.
+The applications that comprise this bundle are spread across 2 machines as
+follows:
 
-    juju config jenkins password=<your_password>
+  * Machine 1
+    * Jenkins
+    * Juju CI environment
+  * Machine 2
+    * The review queue
+    * Postresql
+    * Rabbit MQ
 
-You will also need to give the CI access to a controller. To do so you would need to
-issue the following on a controller you have already bootstraped:
+Deploying this bundle sets the foundation for a charm oriented CI infrastructure.
+Additional configuration steps are required to reach a fully functional
+CI pipeline tailored to your specific needs.
+In particular you will need to configure the `juju-ci-env` application to be able to
+interact with the juju store and also to register with juju controllers.
+The latter are used to draw resources from and run the charm and bundle tests.
 
-    juju add-user ciuser
-    juju grant ciuser superuser
+Please, find additional configuration steps in the README documentation of
+the respective charms:
 
-Then login into jenkins (user admin) and build the `RegisterController` job providing the token you got form
-the add-user command and a user friendly name for the controller.
-While you are logged in you can initialise the session between jenkins and the Juju Store
-so that you can push the build artifacts to the store. To do so you need to trigger the `InitJujuStoreSession`
-job.
+  * [jenkins][],
+  * [review-queue][] and
+  * [juju-ci-env][]
 
-To have your charm build and optionally pushed to the store you can
-call the `buildcharmjob` action. This action would need the github url of your project,
-the charm name and should you decide to push the charm to the store it would also need
-your launchpad ID. Here is an example on how to trigger this action:
-
-     juju run-action juju-ci-env/0 buildcharmjob charmname="my-awesome-charm" gitrepo="https://github.com/meatgh/my-awesome-charm-layer" pushtostore=True lpid=me.at.launchpad
-
-After deploying the job to Jenkins you would need to reload the jenkins configuration.
+[jenkins]: [https://jujucharms.com/jenkins/xenial/1]
+[review-queue]: [https://jujucharms.com/u/juju-solutions/review-queue/26]
+[juju-ci-env]: [https://jujucharms.com/u/kos.tsakalozos/juju-ci-env/4]
 
 
 # Resources
