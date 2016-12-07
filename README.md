@@ -54,7 +54,7 @@ information about these charms can by found in the following linked READMEs:
   * [rabbitmq-server][]
 
 [jenkins]: [https://jujucharms.com/jenkins/xenial/1]
-[cwr]: [https://jujucharms.com/u/kos.tsakalozos/juju-ci-env/4]
+[cwr]: [https://jujucharms.com/u/kos.tsakalozos/cwr/0]
 [review-queue]: [https://jujucharms.com/u/juju-solutions/review-queue/26]
 [postgresql]: [https://jujucharms.com/postgresql]
 [rabbitmq-server]: [https://jujucharms.com/rabbitmq-server]
@@ -91,13 +91,23 @@ your bootstrapped controller(s) with appropriate permissions:
     juju add-user ciuser
     juju grant ciuser add-model
 
-Login to Jenkins and trigger the `RegisterController` job. This job requires
-you to provide a human-friendly name and the registration token from the above
-`juju grant` command.
+To register the controller with the CWR charm you will need to call the
+`register-controller` action and provide a human-friendly name and the
+registration token from the above `juju add-user` command.
 
-While logged in to Jenkins, you should also setup a session with the charm
-store to allow this CI system to release charms to your namespace. To do this,
-trigger the `InitJujuStoreSession` job with your (build-bot's) credentials.
+    juju run-action cwr/0 register-controller token=<controller-name> \
+        token=<registration-token>
+
+You should also setup a session with the charm store to allow this CI system
+to release charms to your namespace. To do this, you should call the
+`store-login` action of the CWR charm and provide the base64 represenatation
+of an already existing auth token. To aquire such a token you should use the
+Juju CLI to login into the charm store:
+
+    charm login
+    .........
+    export TOKEN=`base64 ~/.local/share/juju/store-usso-token`
+    juju run-action cwr/0 store-login charmstore-usso-token="$TOKEN"
 
 At this point, you have the foundation for a powerful charm/bundle CI system.
 Workflows that leverage this system are described in the next section.
@@ -127,11 +137,11 @@ process from Github to an an `edge` or `stable` channel in the charm store.
 To include `awesome-charm` in our CI pipeline, we need to call the
 `buildcharmoncommit` action:
 
-    juju run-action cwr/0 buildcharmoncommit \
-        gitrepo=http://github.com/myself/my-awesome-charm \
-        charmname=awesome-charm \
-        pushtochannel=edge \
-        lpid=awesome-team \
+    juju run-action cwr/0 build-on-commit \
+        repo=http://github.com/myself/my-awesome-charm \
+        charm-name=awesome-charm \
+        push-to-channel=edge \
+        lp-id=awesome-team \
         controller=lxd
 
 This will instruct Cloud Weather Report to build a Jenkins job to test
@@ -141,11 +151,11 @@ each time you **commit** to your repo.
 For releasing `awesome-charm` to the stable channel, we need a similar call to
 the `buildcharmonrelease` action:
 
-    juju run-action cwr/0 buildcharmonrelease \
-        gitrepo=http://github.com/myself/my-awesome-charm \
-        charmname=awesome-charm \
-        pushtochannel=stable \
-        lpid=awesome-team \
+    juju run-action cwr/0 build-on-release \
+        repo=http://github.com/myself/my-awesome-charm \
+        charm-name=awesome-charm \
+        push-to-channel=stable \
+        lp-id=awesome-team \
         controller=aws
 
 This will instruct Cloud Weather Report to build a Jenkins job to test
