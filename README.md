@@ -16,84 +16,169 @@
 -->
 # Overview
 
-This bundle deploys a reference infrastructure for testing, reviewing and releasing charms and bundles to the Juju Store. The CI used in this bundle is Jenkins paired with a set of charm specific tools, namely:
+This bundle deploys a reference platform for reviewing, testing, and releasing
+Juju Charms and Bundles into the Juju Charm Store. The CI used in this bundle
+is Jenkins, paired with the following charm-specific tools:
 
-  * [The Review Queue][]
-  * [Cloud Weather Report][]
+  * [Cloud Weather Report (CWR)][]
   * [Bundletester][]
   * [Matrix][]
+  * [Review Queue][]
 
-[The Review Queue]: https://github.com/juju-solutions/review-queue
-[Cloud Weather Report]: https://github.com/juju-solutions/cloud-weather-report
+[Cloud Weather Report (CWR)]: https://github.com/juju-solutions/cloud-weather-report
 [Bundletester]: https://github.com/juju-solutions/bundletester
 [Matrix]: https://github.com/juju-solutions/matrix
+[Review Queue]: https://github.com/juju-solutions/review-queue
 
+The cornerstone of this bundle is Cloud Weather Report (CWR). The `cwr` charm
+handles CI requests (either from a webhook or the Review Queue), manages
+the necessary models on your controller(s), dispatches jobs to Jenkins,
+provides job status to the requester, and can automatically release charms to
+your namespace in the charm store.
+
+> Note: We have a variation of this bundle called [cwr-ci][] that includes all
+of the same components without the Review Queue. If you are interested in a
+charm/bundle CI system but do not need your own source review application, we
+recommend you have a look at [cwr-ci][].
+
+[cwr-ci]: https://github.com/juju-solutions/bundle-cwr-ci
 
 ## Bundle Composition
+The charms that comprise this bundle are spread across 4 machines. Additional
+information about these charms can by found in the following linked READMEs:
 
-The applications that comprise this bundle are spread across 2 machines as follows:
-
-  * Machine 1
-    * Jenkins
-    * Juju CI environment
-  * Machine 2
-    * The review queue
-    * Postresql
-    * Rabbit MQ
-
-Deploying this bundle sets the foundation for a charm oriented CI infrastructure. Additional configuration steps are required to reach a fully functional CI pipeline tailored to your specific needs. In particular you will need to configure the `juju-ci-env` application to be able to interact with the juju store and also to register with juju controllers. The latter are used to draw resources from and run the charm and bundle tests.
-
-Please, find additional configuration steps in the README documentation of the respective charms:
-
-  * [jenkins][],
-  * [review-queue][] and
-  * [juju-ci-env][]
+  * [jenkins][]
+  * [cwr][] (colocated on the jenkins machine)
+  * [review-queue][]
+  * [postgresql][]
+  * [rabbitmq-server][]
 
 [jenkins]: [https://jujucharms.com/jenkins/xenial/1]
+[cwr]: [https://jujucharms.com/u/kos.tsakalozos/juju-ci-env/4]
 [review-queue]: [https://jujucharms.com/u/juju-solutions/review-queue/26]
-[juju-ci-env]: [https://jujucharms.com/u/kos.tsakalozos/juju-ci-env/4]
+[postgresql]: [https://jujucharms.com/postgresql]
+[rabbitmq-server]: [https://jujucharms.com/rabbitmq-server]
 
 
 # Getting Started
 
-## Basic Configuration
+> Note: A bootstrapped Juju controller is required. If Juju is not yet set up,
+please follow the [getting-started][] instructions prior to deploying this
+bundle.
 
-As soon as the bundle is deployed you will need to setup a password for Jenkins:
+[getting-started]: https://jujucharms.com/docs/stable/getting-started
+
+Deploy this bundle from the charm store:
+
+    juju deploy cwr-rq
+
+Charms in this bundle provide status messages to indicate their readiness.
+Monitor the progress of the deployment with:
+
+    watch juju status
+
+> Note: Once the charms indicate they are ready, use `Ctrl-c` to terminate the
+`watch` command and proceed with the following instructions.
+
+Set a password for Jenkins:
 
     juju config jenkins password=<yourpassword>
 
-To let the CI know about the existence of a controller you will need to login to Jenkins and trigger the `RegisterCOntroller` job. This job requires you to provide the controller registration token and a human friendly name. To aquire a registration token you would need to add a user to the controller you have already bootstrapped and grant the appropriate permissions.
+CWR needs access to your controller(s) to create models and allocate resources
+needed to run charm/bundle tests. Grant this by creating a user on
+your bootstrapped controller(s) with appropriate permissions:
 
     juju add-user ciuser
     juju grant ciuser add-model
 
-While logged in to Jenkins you should also setup a session with the Juju Store. To do so you should trigger the `InitJujuStoreSession` job providing your (build-bot's) credentials
+Login to Jenkins and trigger the `RegisterController` job. This job requires
+you to provide a human-friendly name and the registration token from the above
+`juju grant` command.
+
+While logged in to Jenkins, you should also setup a session with the charm
+store to allow this CI system to release charms to your namespace. To do this,
+trigger the `InitJujuStoreSession` job with your (build-bot's) credentials.
+
+At this point, you have the foundation for a powerful charm/bundle CI system.
+Workflows that leverage this system are described in the next section.
 
 
-## Manage the Release Cycle of your Charm
+# Workflows
 
-Prerequisites:
-  * A charm/top charm layer - named: awesome-charm
-  * Source on Github - repo: http://github.com/myself/my-awesome-charm
-  * A namespace on Juju store - Launchpad ID: mycorp
+## Manage the Charm Release Cycle from Github
 
-Our goal here is to build and test our charm every time we commit code to the head of the master branch of the repo. In light of a successful test, the resulting charm is pushed to the store and released under the edge channel. Releases to the stable channel are managed through github by adding a release tag. Upon a the creation of a tag the CI automatically performs the build, test, release cycle.
+### Description
+Our goal is to build and test a charm/bundle every time code is committed to a
+repository. In light of a successful test, the resulting charm/bundle is pushed
+to the store and released in the `edge` channel. Similarly, releases to the
+`stable` channel can be made by tagging the code in Github when ready.
 
-The rational of the above workflow is that you always want to test your charm and as soon as you are confident you just tag the code on githab and release it.
+The rationale of this workflow is that you want charm/bundle updates released as
+soon as you are confident that things are working as expected. With good tests,
+the CI system can give you that confidence and automatically handle the release
+process from Github to an an `edge` or `stable` channel in the charm store.
 
-To build our awesome-charm we need to call the `buildcharmoncommit` action:
+### Prerequisites
+  * A charm/top charm layer, e.g.: `awesome-charm`
+  * Source repository on Github, e.g.: `http://github.com/myself/my-awesome-charm`
+  * A charm store namespace, e.g.: `awesome-team`
 
-    juju run-action juju-ci-env/0 buildcharmoncommit gitrepo=http://github.com/myself/my-awesome-charm charmname=awesome-charm  pushtochannel=edge lpid=mycorp controller=lxd
+### Procedure
+To include `awesome-charm` in our CI pipeline, we need to call the
+`buildcharmoncommit` action:
 
-The above action will add a job into jenkins and use the `lxd` controller.
+    juju run-action cwr/0 buildcharmoncommit \
+        gitrepo=http://github.com/myself/my-awesome-charm \
+        charmname=awesome-charm \
+        pushtochannel=edge \
+        lpid=awesome-team \
+        controller=lxd
 
-For releasing our charm to the stable channel we need a similar call to the `buildcharmonrelease` action:
+This will instruct Cloud Weather Report to build a Jenkins job to test
+`awesome-charm` on your `lxd` controller and release it to the **edge** channel
+each time you **commit** to your repo.
 
-    juju run-action juju-ci-env/0 buildcharmonrelease gitrepo=http://github.com/myself/my-awesome-charm charmname=awesome-charm  pushtochannel=stable lpid=mycorp controller=aws
+For releasing `awesome-charm` to the stable channel, we need a similar call to
+the `buildcharmonrelease` action:
 
-For completeness the releases are tested on AWS.
+    juju run-action cwr/0 buildcharmonrelease \
+        gitrepo=http://github.com/myself/my-awesome-charm \
+        charmname=awesome-charm \
+        pushtochannel=stable \
+        lpid=awesome-team \
+        controller=aws
 
-What we describe here is just one of the workflows you can have to release your charm, please let us know about your workflow in the list below.
+This will instruct Cloud Weather Report to build a Jenkins job to test
+`awesome-charm` on your `aws` controller and release it to the **stable**
+channel any time you **tag** your source with a release tag.
+
+## Ensure Charm Quality with the Review Queue
+
+### Description
+The Review Queue is a web app for reviewing charm/bundle source. It is typically
+used to gate inclusion into the recommended section (i.e. top-level namespace)
+of the charm store. The public review queue is available for anyone to
+make submissions to the charm store at [review.jujucharms.com][].
+
+Upon requesting a review of your namespace charm
+(e.g. `~awesome-team/awesome-charm`), the review queue will invoke CWR to test
+your charm on all known substrates and then provide those test results. In
+addition, the review queue provides a user interface for reviewing source as
+well as a checklist of requirements that must be met to become a recommended
+charm/bundle in the store.
+
+[review.jujucharms.com]: https://review.jujucharms.com
+
+The public review queue is deployed using this bundle and is available for
+your organization to duplicate this environment in-house if needed. The
+features describe above promote collaborative charm/bundle development
+coupled with powerful automated test capabilities.
+
+# Summary
+
+We have described two workflows that can leverage the charm/bundle CI system
+provided by this bundle. Do you have ideas or other workflows built around
+CWR? Please let us know by contacting us on the mailing list below.
 
 # Resources
 

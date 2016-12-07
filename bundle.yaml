@@ -9,7 +9,7 @@ services:
       gui-y: "400"
     to:
       - "0"
-  juju-ci-env:
+  cwr:
     charm: "cs:~kos.tsakalozos/juju-ci-env"
     annotations:
       gui-x: "300"
@@ -32,7 +32,7 @@ services:
       gui-x: "-250"
       gui-y: "200"
     to:
-      - "1"
+      - "2"
   rabbitmq:
     charm: "cs:rabbitmq-server"
     num_units: 1
@@ -40,17 +40,23 @@ services:
       gui-x: "-250"
       gui-y: "600"
     to:
-      - "1"
+      - "3"
 series: xenial
 relations:
-  - [juju-ci-env, jenkins]
-  - [juju-ci-env, review-queue]
+  - [cwr, jenkins]
+  - ["review-queue:cwr-ci", "cwr:cwr-ci"]
   - ["review-queue:db", "postgresql:db"]
-  - [review-queue, rabbitmq]
+  - ["review-queue", "rabbitmq"]
 machines:
   "0":
     constraints: "mem=7G"
     series: "xenial"
   "1":
-    constraints: "mem=7G"
+    constraints: "mem=3G"
+    series: "xenial"
+  "2":
+    constraints: "mem=3G"
+    series: "xenial"
+  "3":
+    constraints: "mem=3G"
     series: "xenial"
