@@ -44,7 +44,7 @@ services:
 series: xenial
 relations:
   - ["cwr:jenkins", "jenkins"]
-  - ["cwr:cwr-ci", "review-queue:ci"]
+  - ["cwr:ci-client", "review-queue:ci"]
   - ["review-queue:amqp", "rabbitmq:amqp"]
   - ["review-queue:db", "postgresql:db"]
 machines:
