@@ -15,7 +15,7 @@ services:
       gui-x: "300"
       gui-y: "400"
   review-queue:
-    charm: "cs:~juju-solutions/review-queue-28"
+    charm: "cs:~juju-solutions/review-queue-29"
     num_units: 1
     annotations:
       gui-x: "0"

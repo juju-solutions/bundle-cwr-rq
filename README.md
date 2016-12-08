@@ -207,7 +207,7 @@ Now configure the `base_url` with your `https` URL:
 
     juju config review-queue base_url=https://<your-url>
 
-The web interface will be available at `https://<your-url>:6542`. Login to
+The web interface will be available at `https://<your-url>`. Login to
 the application and click `Request a Review`. Submit a charm/bundle from your
 namespace that you would like to review (e.g. `~awesome-team/awesome-charm`).
 
