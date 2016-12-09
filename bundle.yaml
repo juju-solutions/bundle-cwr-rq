@@ -10,12 +10,12 @@ services:
     to:
       - "0"
   cwr:
-    charm: "cs:~kos.tsakalozos/cwr-0"
+    charm: "cs:~juju-solutions/cwr-2"
     annotations:
       gui-x: "300"
       gui-y: "400"
   review-queue:
-    charm: "cs:~juju-solutions/review-queue-29"
+    charm: "cs:~juju-solutions/review-queue-30"
     num_units: 1
     annotations:
       gui-x: "0"
