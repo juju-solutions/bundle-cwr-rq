@@ -53,11 +53,11 @@ information about these charms can by found in the following linked READMEs:
   * [postgresql][]
   * [rabbitmq-server][]
 
-[jenkins]: [https://jujucharms.com/jenkins/xenial/1]
-[cwr]: [https://jujucharms.com/u/kos.tsakalozos/cwr/0]
-[review-queue]: [https://jujucharms.com/u/juju-solutions/review-queue/26]
-[postgresql]: [https://jujucharms.com/postgresql]
-[rabbitmq-server]: [https://jujucharms.com/rabbitmq-server]
+[jenkins]: https://jujucharms.com/jenkins/xenial
+[cwr]: https://jujucharms.com/u/kos.tsakalozos/cwr
+[review-queue]: https://jujucharms.com/u/juju-solutions/review-queue
+[postgresql]: https://jujucharms.com/postgresql
+[rabbitmq-server]: https://jujucharms.com/rabbitmq-server
 
 
 # Getting Started
